@@ -1,0 +1,20 @@
+#!/bin/bash -ex
+#
+# run https://github.com/avast/apkparser on the whole collection
+
+i=0
+for f in `find /data/ttt-apks/ -type f -name \*.apk` \
+             /data/malware-apks/ikarus/*/*_[0-9]* \
+             /data/malware-apks/github.com/*/*/*/*/*/*.apk; do
+    outpath=${f#/data/malware-apks/}
+    outpath=${outpath#/data/ttt-apks/}
+    output=/data/ttt-apks/extracted-features/apkparser-axml2xml/${outpath}.AndroidManifest.xml
+    test -e $output && continue
+    test -d $(dirname $output) || mkdir -p $(dirname $output)
+    ~/go/bin/axml2xml -a "$f" > "$output" &
+    i=$((i+1))
+    if [ $i -gt `nproc` ]; then
+        wait
+        i=0
+    fi
+done
