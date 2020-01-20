@@ -7,7 +7,7 @@ export LC_ALL=C.UTF-8
 i=0
 for f in `find /data/ttt-apks/ -type f -name \*.apk` \
              /data/malware-apks/ikarus/*/*_[0-9]* \
-             /data/malware/apks/github.com/*/*/*/*/*/*.apk; do
+             /data/malware-apks/github.com/*/*/*/*/*/*.apk; do
     outpath=${f#/data/malware-apks/}
     outpath=${outpath#/data/ttt-apks/}
     output=/data/ttt-apks/extracted-features/unzip-ipgrep/${outpath}.unzip-ipgrep

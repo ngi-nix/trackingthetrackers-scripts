@@ -7,7 +7,7 @@ export LC_ALL=C.UTF-8
 i=0
 for f in `find /data/ttt-apks/ -type f -name \*.apk` \
              /data/malware-apks/ikarus/*/*_[0-9]* \
-             /data/malware/apks/github.com/*/*/*/*/*/*.apk; do
+             /data/malware-apks/github.com/*/*/*/*/*/*.apk; do
     outpath=${f#/data/malware-apks/}
     outpath=${outpath#/data/ttt-apks/}
     output=/data/ttt-apks/extracted-features/ipgrep/${outpath}.ipgrep
@@ -16,7 +16,6 @@ for f in `find /data/ttt-apks/ -type f -name \*.apk` \
     (python /data/malware-apks/code/jedisctl/ipgrep/ipgrep.py $f > $output 2>&1 || true) &
     i=$((i+1))
     if [ $i -gt 2 ]; then
-        exit 1
         wait
         i=0
     fi
