@@ -55,3 +55,7 @@ for repo in g.get_repos():
                     download_file(asset.browser_download_url)
     except GithubException:
         continue
+    except requests.exceptions.ReadTimeout as e:
+        print(e)
+        time.sleep(600)
+        continue
