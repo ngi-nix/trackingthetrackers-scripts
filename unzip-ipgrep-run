@@ -1,0 +1,23 @@
+#!/bin/bash -ex
+
+export LC_ALL=C.UTF-8
+
+. /data/malware-apks/code/jedisctl/ipgrep/venv/bin/activate
+
+i=0
+for f in `find /data/ttt-apks/ -type f -name \*.apk` \
+             /data/malware-apks/ikarus/*/*_[0-9]* \
+             /data/malware/apks/github.com/*/*/*/*/*/*.apk; do
+    outpath=${f#/data/malware-apks/}
+    outpath=${outpath#/data/ttt-apks/}
+    output=/data/ttt-apks/extracted-features/unzip-ipgrep/${outpath}.unzip-ipgrep
+    test -e $output && continue
+    test -d $(dirname $output) || mkdir -p $(dirname $output)
+    # use -c rather than -p to send the filenames to ipgrep
+    (unzip -c $f | python3 /data/malware-apks/code/jedisctl/ipgrep/ipgrep.py > $output 2>&1 || true) &
+    i=$((i+1))
+    if [ $i -gt `nproc` ]; then
+        wait
+        i=0
+    fi
+done
