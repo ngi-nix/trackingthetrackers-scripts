@@ -30,18 +30,22 @@ for root, dirs, files in os.walk('.'):
     for f in files:
         if f.endswith('.gradle'):
             current_file = os.path.join(root, f)
-            if current_file in output:
+            print(current_file)
+            segments = current_file.split('/')
+            appid = segments[1]
+            if appid not in output:
+                output[appid] = dict()
+            subpath = os.path.join(*segments[2:])
+            if subpath in output[appid]:
                 continue
-            output[current_file] = []
+            output[appid][subpath] = []
             with open(current_file) as fp:
                 for m in libline_path.finditer(fp.read()):
-                    print(m.group(2))
                     gradle_line = m.group(2)
                     output['set'].add(gradle_line)
-                    # add another dict layer using appid, then current_file
-                    output[current_file].append(gradle_line)
-            if current_file in output and not output[current_file]:
-                del(output[current_file])
+                    output[appid][subpath].append(gradle_line)
+            if subpath in output[appid] and not output[appid][subpath]:
+                del(output[appid][subpath])
 
     if os.path.exists(dictfile):
         shutil.move(dictfile, dictfile + '~')
