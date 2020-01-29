@@ -1,0 +1,12 @@
+#!/usr/bin/python3
+
+import re
+import requests
+
+url = 'https://developer.android.com/reference/android/Manifest.permission.html'
+
+r = requests.get(url)
+r.raise_for_status()
+for m in re.finditer(r'Constant Value:\s*"([^"]+)"', r.text):
+    if m:
+        print(m.group(1))
