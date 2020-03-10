@@ -45,6 +45,9 @@ for f in sorted(glob.glob('*.apk')):
                 fp.write('\n')
 
     if apk_dir:
-        print(f, '-->', os.path.join(apk_dir, os.path.basename(f)))
+        print(os.path.join(os.getcwd(),f),
+              '-->',
+              os.path.join(apk_dir, os.path.basename(f)))
         os.makedirs(apk_dir, exist_ok=True)
-        os.symlink(f, os.path.join(apk_dir, os.path.basename(f)))
+        os.symlink(os.path.join(os.getcwd(),f),
+                   os.path.join(apk_dir, os.path.basename(f)))
