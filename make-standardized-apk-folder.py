@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-
+#
+# This generates a standardized APK file layout:
+# <ApplicationID>/<VersionCode>/<SHA256>.apk
 
 import glob
 import logging
