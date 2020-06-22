@@ -14,7 +14,7 @@ config['jarsigner'] = 'jarsigner'
 common.config = config
 index.config = config
 
-local_apk_dir = '/data/malware-apks/known-good/f-droid.org'
+fdroid_apk_dir = '/data/malware-apks/known-good/f-droid.org'
 set_dir = os.path.join(os.getcwd(), 'clean')
 
 for f in glob.glob(os.path.join(set_dir, '*/*/*.apk')):
@@ -41,7 +41,7 @@ for section in ['repo', 'archive']:
         for package in packages:
             if package['packageName'] in packageNames_with_trackers:
                 continue
-            apk_path = os.path.join(local_apk_dir, section, package['apkName'])
+            apk_path = os.path.join(fdroid_apk_dir, section, package['apkName'])
             symlink_path = os.path.join(set_dir,
                                         package['packageName'], str(package['versionCode']),
                                         package['hash'] + '.apk')

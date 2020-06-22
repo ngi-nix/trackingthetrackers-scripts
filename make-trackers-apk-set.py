@@ -1,20 +1,56 @@
 #!/usr/bin/env python3
 
+import binascii
 import csv
+import functools
 import glob
 import gzip
+import hashlib
 import io
 import json
 import os
 import sys
+import zipfile
+from androguard.core.bytecodes.apk import get_apkid
 from fdroidserver import common, index
+
+
+def gen_row(f):
+    sha256 = hashlib.sha256()
+    sha1 = hashlib.sha1()
+    md5 = hashlib.md5()
+    with open(f, 'rb') as fp:
+        for chunk in iter(functools.partial(fp.read, 8192), b''):
+            sha256.update(chunk)
+            sha1.update(chunk)
+            md5.update(chunk)
+    try:
+        with zipfile.ZipFile(f) as zf:
+            classes_dex = zf.getinfo('classes.dex')
+            dt = classes_dex.date_time
+            dex_date = '%04d-%02d-%02d %02d:%02d:%02d' % dt
+            appid, versionCode, versionName = get_apkid(f)
+        return (
+            binascii.hexlify(sha256.digest()).decode(),
+            binascii.hexlify(sha1.digest()).decode(),
+            binascii.hexlify(md5.digest()).decode(),
+            str(dex_date),
+            os.path.getsize(f),
+            appid,
+            versionCode
+        )
+    except (KeyError, Exception) as e:
+        print('\n', f, e)
+    return tuple()
+
 
 config = dict()
 config['jarsigner'] = 'jarsigner'
 common.config = config
 index.config = config
 
-local_apk_dir = '/data/malware-apks/known-good/f-droid.org'
+ikarus_adware_apk_dir = '/data/malware-apks/ikarus/adware'
+fdroid_apk_dir = '/data/malware-apks/known-good/f-droid.org'
 set_dir = os.path.join(os.getcwd(), 'trackers')
 
 for f in glob.glob(os.path.join(set_dir, '*/*/*.apk')):
@@ -41,7 +77,7 @@ for section in ['repo', 'archive']:
         for package in packages:
             if package['packageName'] not in packageNames_with_trackers:
                 continue
-            apk_path = os.path.join(local_apk_dir, section, package['apkName'])
+            apk_path = os.path.join(fdroid_apk_dir, section, package['apkName'])
             symlink_path = os.path.join(set_dir,
                                         package['packageName'], str(package['versionCode']),
                                         package['hash'] + '.apk')
@@ -63,6 +99,18 @@ for section in ['repo', 'archive']:
                 'f-droid.org',
             ))
 
+for f in glob.glob(os.path.join(ikarus_adware_apk_dir, '*')):
+    if os.path.isdir(f):
+        continue
+    row = gen_row(f)
+    if row:
+        apk_list.add(row)
+        if row[5] and row[6]:
+            symlink_path = os.path.join(set_dir, row[5], row[6], row[0] + '.apk')
+            os.makedirs(os.path.dirname(symlink_path), exist_ok=True)
+            print(f, '\n\t', symlink_path)
+            os.symlink(f, symlink_path)
+
 print('writing', apk_list_file)
 with gzip.GzipFile(apk_list_file, 'w') as gz:
     buff = io.StringIO()
@@ -70,4 +118,4 @@ with gzip.GzipFile(apk_list_file, 'w') as gz:
     writer.writerows(apk_list)
     gz.write(buff.getvalue().encode())
 
-# TODO get clean set from Exodus
+# TODO get tracker set from Exodus
