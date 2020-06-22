@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+import csv
 import glob
+import gzip
+import io
 import json
 import os
 import sys
@@ -19,6 +22,8 @@ for f in glob.glob(os.path.join(set_dir, '*/*/*.apk')):
 for d in glob.glob(os.path.join(set_dir, '*/[0-9]*')):
     os.rmdir(d)
 
+apk_list = set()
+apk_list_file = 'trackers/apk_list.csv.gz'
 for section in ['repo', 'archive']:
     packageNames_with_trackers = set()
     url = 'https://ftp.fau.de/fdroid/' + section
@@ -44,5 +49,25 @@ for section in ['repo', 'archive']:
             print(apk_path, '\n\t', symlink_path)
             os.symlink(apk_path, symlink_path)
 
+            apk_list.add((
+                package['hash'],  # sha256
+                None,  # sha1
+                None,  # md5
+                None,  # dex_date
+                os.path.getsize(apk_path),
+                package['packageName'],
+                package['versionCode'],
+                None,  # VirusTotal detection
+                None,  # VirusTotal scan date
+                None,  # dex size
+                'f-droid.org',
+            ))
+
+print('writing', apk_list_file)
+with gzip.GzipFile(apk_list_file, 'w') as gz:
+    buff = io.StringIO()
+    writer = csv.writer(buff)
+    writer.writerows(apk_list)
+    gz.write(buff.getvalue().encode())
+
 # TODO get clean set from Exodus
-# TODO make androzoo index output
