@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-import csv
 import glob
-import gzip
-import io
 import json
 import os
-import sys
+import trackingthetrackers
 from fdroidserver import common, index
 
 config = dict()
@@ -63,11 +60,5 @@ for section in ['repo', 'archive']:
                 'f-droid.org',
             ))
 
-print('writing', apk_list_file)
-with gzip.GzipFile(apk_list_file, 'w') as gz:
-    buff = io.StringIO()
-    writer = csv.writer(buff)
-    writer.writerows(apk_list)
-    gz.write(buff.getvalue().encode())
-
+trackingthetrackers.write_apk_list(apk_list)
 # TODO get clean set from Exodus
