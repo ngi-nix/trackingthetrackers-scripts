@@ -67,7 +67,6 @@ def get_exodus_signatures():
     exodus = r.json()
     code_signatures = []
     network_signatures = []
-    print(exodus['trackers'][0])
     for tracker in exodus['trackers']:
         code_signature = tracker.get('code_signature')
         if code_signature and code_signature != 'NC':  # there are some errant 'NC' entries
@@ -86,12 +85,14 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
         code_signatures_regex, network_signatures_regex = get_exodus_signatures()
 
     apk_path = os.readlink(apk_symlink_path)[len(APK_ROOT) + 1:]
-    dex_path = os.path.join(APKANALYZER_ROOT, apk_path + '.dex-dump.gz')
     apk_vector = {
         'applicationId': applicationId,
         'sha256': sha256,
     }
 
+    dex_path = os.path.join(APKANALYZER_ROOT, apk_path + '.dex-dump.gz')
+    if not os.path.exists(dex_path):
+        return
     dependencies = set()
     with gzip.open(dex_path, 'rt') as gz:
         for m in code_signatures_regex.findall(gz.read()):
@@ -99,6 +100,8 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
     apk_vector['dependencies'] = sorted(dependencies)
 
     axml_path = os.path.join(AXML_ROOT, apk_path + '.AndroidManifest.xml')
+    if not os.path.exists(axml_path):
+        return
     tree = ElementTree.parse(axml_path)
     permissions = tree.findall('uses-permission')  # type: List[ElementTree.Element]
     # loop over xml tree and gather permissions in a list
@@ -109,8 +112,8 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
     apk_vector['usesPermissions'] = sorted(permissions_requested)
 
     ipgrep_path = os.path.join(IPGREP_ROOT, apk_path + '.unzip-ipgrep')
-    print(ipgrep_path)
-    print(glob.glob(ipgrep_path))
+    if not os.path.exists(ipgrep_path):
+        return
     domain_names = set()
     with open(ipgrep_path) as fp:
         hosts = csv.reader(fp, dialect='excel-tab')
@@ -120,6 +123,8 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
                 domain_names.add(domainname)
 
     faup_path = os.path.join(FAUP_ROOT, apk_path + '.unzip-faup.csv')
+    if not os.path.exists(faup_path):
+        return
     with open(faup_path) as fp:
         domain_names.update([x.strip() for x in fp.readlines()])
     if '' in domain_names:
