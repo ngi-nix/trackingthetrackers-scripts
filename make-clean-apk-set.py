@@ -20,7 +20,6 @@ for d in glob.glob(os.path.join(set_dir, '*/[0-9]*')):
     os.rmdir(d)
 
 apk_list = set()
-apk_list_file = 'clean/apk_list.csv.gz'
 for section in ['repo', 'archive']:
     packageNames_with_trackers = set()
     url = 'https://ftp.fau.de/fdroid/' + section
@@ -60,5 +59,5 @@ for section in ['repo', 'archive']:
                 'f-droid.org',
             ))
 
-trackingthetrackers.write_apk_list(apk_list)
+trackingthetrackers.write_apk_list(apk_list, 'clean/apk_list.csv.gz')
 # TODO get clean set from Exodus

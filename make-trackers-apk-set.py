@@ -22,7 +22,6 @@ for d in glob.glob(os.path.join(set_dir, '*/[0-9]*')):
     os.rmdir(d)
 
 apk_list = set()
-apk_list_file = 'trackers/apk_list.csv.gz'
 for section in ['repo', 'archive']:
     packageNames_with_trackers = set()
     url = 'https://ftp.fau.de/fdroid/' + section
@@ -74,6 +73,6 @@ for f in sorted(glob.glob(os.path.join(ikarus_adware_apk_dir, '*'))):
             print(f, '\n\t', symlink_path)
             os.symlink(f, symlink_path)
 
-trackingthetrackers.write_apk_list(apk_list)
+trackingthetrackers.write_apk_list(apk_list, 'trackers/apk_list.csv.gz')
 
 # TODO get tracker set from Exodus
