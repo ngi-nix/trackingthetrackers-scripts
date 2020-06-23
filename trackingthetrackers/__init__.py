@@ -1,4 +1,5 @@
 
+import binascii
 import csv
 import functools
 import glob
@@ -11,6 +12,7 @@ import re
 import requests
 import zipfile
 from xml.etree import ElementTree
+from androguard.core.bytecodes.apk import get_apkid
 
 APK_ROOT = '/data/malware-apks'
 
