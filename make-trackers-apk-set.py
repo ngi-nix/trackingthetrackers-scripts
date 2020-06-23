@@ -99,7 +99,7 @@ for section in ['repo', 'archive']:
                 'f-droid.org',
             ))
 
-for f in glob.glob(os.path.join(ikarus_adware_apk_dir, '*')):
+for f in sorted(glob.glob(os.path.join(ikarus_adware_apk_dir, '*'))):
     if os.path.isdir(f):
         continue
     row = gen_row(f)
