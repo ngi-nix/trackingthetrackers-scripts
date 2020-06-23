@@ -12,6 +12,8 @@ config['jarsigner'] = 'jarsigner'
 common.config = config
 index.config = config
 
+code_signatures_regex, network_signatures_regex = trackingthetrackers.get_exodus_signatures()
+
 ikarus_adware_apk_dir = '/data/malware-apks/ikarus/adware'
 fdroid_apk_dir = '/data/malware-apks/known-good/f-droid.org'
 set_dir = os.path.join(os.getcwd(), 'trackers')
@@ -60,6 +62,9 @@ for section in ['repo', 'archive']:
                 None,  # dex size
                 'f-droid.org',
             ))
+            trackingthetrackers.write_feature_vector_json(symlink_path,
+                                                          package['packageName'],
+                                                          package['hash'])
 
 for f in sorted(glob.glob(os.path.join(ikarus_adware_apk_dir, '*'))):
     if os.path.isdir(f):
@@ -72,6 +77,7 @@ for f in sorted(glob.glob(os.path.join(ikarus_adware_apk_dir, '*'))):
             os.makedirs(os.path.dirname(symlink_path), exist_ok=True)
             print(f, '\n\t', symlink_path)
             os.symlink(f, symlink_path)
+            trackingthetrackers.write_feature_vector_json(symlink_path, row[5], row[0])
 
 trackingthetrackers.write_apk_list(apk_list, 'trackers/apk_list.csv.gz')
 
