@@ -20,8 +20,6 @@ set_dir = os.path.join(os.getcwd(), 'trackers')
 
 for f in glob.glob(os.path.join(set_dir, '*/*/*.apk')):
     os.unlink(f)
-for d in glob.glob(os.path.join(set_dir, '*/[0-9]*')):
-    os.rmdir(d)
 
 apk_list = set()
 for section in ['repo', 'archive']:
