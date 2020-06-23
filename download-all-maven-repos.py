@@ -45,6 +45,6 @@ repos = [
 #for repo in repos:
 #    opendirs(repo)
 
-with open('jcenter-urls.json') as fp:
+with open(os.path.join(os.path.dirname(__file__), 'jcenter-urls.json')) as fp:
     for url in sorted(json.load(fp)):
         opendirs(url)
