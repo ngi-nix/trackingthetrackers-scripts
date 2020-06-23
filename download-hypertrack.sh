@@ -10,7 +10,7 @@
 set -e
 set -x
 
-BASEDIR=/export/share/code/eighthave/track-the-trackers/hypertrack-android-sdk.s3-website-us-west-2.amazonaws.com
+BASEDIR=/data/ttt-apks/libraries/hypertrack-android-sdk.s3-website-us-west-2.amazonaws.com
 BASEURL=http://hypertrack-android-sdk.s3-website-us-west-2.amazonaws.com
 for i in 0 1 2 3 4 5 6 7 8 9; do
     for j in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do
