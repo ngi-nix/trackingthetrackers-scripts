@@ -140,6 +140,10 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
         tracker_domain_names.remove('')
     apk_vector['domainNames'] = sorted(tracker_domain_names)
 
+    output = {
+        'meta': '0.1.0',
+        'apks': [apk_vector],
+    }
     print('WRITE FEATURE VECTOR:', apk_symlink_path.replace('.apk', '.json'))
     with open(apk_symlink_path.replace('.apk', '.json'), 'w') as fp:
-        json.dump(apk_vector, fp, indent=2, sort_keys=True)
+        json.dump(output, fp, indent=2, sort_keys=True)
