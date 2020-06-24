@@ -114,23 +114,24 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
     apk_vector['usesPermissions'] = sorted(permissions_requested)
 
     ipgrep_path = os.path.join(IPGREP_ROOT, apk_path + '.unzip-ipgrep')
-    if not os.path.exists(ipgrep_path):
-        return
-    domain_names = set()
-    with open(ipgrep_path) as fp:
-        hosts = csv.reader(fp, dialect='excel-tab')
-        for row in hosts:
-            domainname = row[1]
-            if domainname and domainname != '-':
-                domain_names.add(domainname)
+    if os.path.exists(ipgrep_path):
+        domain_names = set()
+        with open(ipgrep_path) as fp:
+            hosts = csv.reader(fp, dialect='excel-tab')
+            for row in hosts:
+                domainname = row[1]
+                if domainname and domainname != '-':
+                    domain_names.add(domainname)
 
     faup_path = os.path.join(FAUP_ROOT, apk_path + '.unzip-faup.csv')
-    if not os.path.exists(faup_path):
+    if os.path.exists(faup_path):
+        with open(faup_path) as fp:
+            domain_names.update([x.strip() for x in fp.readlines()])
+        if '' in domain_names:
+            domain_names.remove('')
+
+    if not os.path.exists(ipgrep_path) and not os.path.exists(faup_path):
         return
-    with open(faup_path) as fp:
-        domain_names.update([x.strip() for x in fp.readlines()])
-    if '' in domain_names:
-        domain_names.remove('')
 
     tracker_domain_names = set()
     for name in domain_names:
