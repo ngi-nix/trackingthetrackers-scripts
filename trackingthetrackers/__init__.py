@@ -119,6 +119,9 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
         with open(ipgrep_path) as fp:
             hosts = csv.reader(fp, dialect='excel-tab')
             for row in hosts:
+                if len(row) != 3:
+                    print('CORRUPT ROW:', ipgrep_path, row)
+                    continue
                 domainname = row[1]
                 if domainname and domainname != '-':
                     domain_names.add(domainname)
