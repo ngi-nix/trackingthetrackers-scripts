@@ -94,6 +94,7 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
 
     dex_path = os.path.join(APKANALYZER_ROOT, apk_path + '.dex-dump.gz')
     if not os.path.exists(dex_path):
+        print('DO DEX_DUMP')
         return
     dependencies = set()
     with gzip.open(dex_path, 'rt') as gz:
@@ -103,6 +104,7 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
 
     axml_path = os.path.join(AXML_ROOT, apk_path + '.AndroidManifest.xml')
     if not os.path.exists(axml_path):
+        print('NO AXML')
         return
     tree = ElementTree.parse(axml_path)
     permissions = tree.findall('uses-permission')  # type: List[ElementTree.Element]
@@ -134,6 +136,7 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
             domain_names.remove('')
 
     if not os.path.exists(ipgrep_path) and not os.path.exists(faup_path):
+        print('NO IPGREP or FAUP domainNames')
         return
 
     tracker_domain_names = set()
