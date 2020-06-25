@@ -43,6 +43,9 @@ for section in ['repo', 'archive']:
             symlink_path = os.path.join(set_dir,
                                         package['packageName'], str(package['versionCode']),
                                         package['hash'] + '.apk')
+            if os.path.exists(symlink_path):
+                print('SKIPPING DUPLICATE:', symlink_path)
+                continue
             os.makedirs(os.path.dirname(symlink_path), exist_ok=True)
             print(apk_path, '\n\t', symlink_path)
             os.symlink(apk_path, symlink_path)
