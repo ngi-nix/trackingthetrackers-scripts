@@ -115,9 +115,9 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
             permissions_requested.append(p[1])  # actual permission
     apk_vector['usesPermissions'] = sorted(permissions_requested)
 
+    domain_names = set()
     ipgrep_path = os.path.join(IPGREP_ROOT, apk_path + '.unzip-ipgrep')
     if os.path.exists(ipgrep_path):
-        domain_names = set()
         with open(ipgrep_path) as fp:
             hosts = csv.reader(fp, dialect='excel-tab')
             for row in hosts:
