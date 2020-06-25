@@ -152,5 +152,6 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
         'apks': [apk_vector],
     }
     print('WRITE FEATURE VECTOR:', apk_symlink_path.replace('.apk', '.json'))
+    os.makedirs(os.path.dirname(apk_symlink_path), exist_ok=True)
     with open(apk_symlink_path.replace('.apk', '.json'), 'w') as fp:
         json.dump(output, fp, indent=2, sort_keys=True)
