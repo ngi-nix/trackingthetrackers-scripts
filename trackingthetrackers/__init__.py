@@ -97,9 +97,13 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
         print('DO DEX_DUMP')
         return
     dependencies = set()
-    with gzip.open(dex_path, 'rt', errors='replace') as gz:
-        for m in code_signatures_regex.findall(gz.read()):
-            dependencies.add(m)
+    try:
+        with gzip.open(dex_path, 'rt', errors='replace') as gz:
+            for m in code_signatures_regex.findall(gz.read()):
+                dependencies.add(m)
+    except EOFError as e:
+        print(dex_path, e)
+        os.remove(dex_path)
     apk_vector['dependencies'] = sorted(dependencies)
 
     axml_path = os.path.join(AXML_ROOT, apk_path + '.AndroidManifest.xml')
