@@ -20,6 +20,7 @@ APKANALYZER_ROOT = '/data/ttt-apks/extracted-features/apkanalyzer-dex-packages'
 AXML_ROOT = '/data/ttt-apks/extracted-features/apkparser-axml2xml'
 FAUP_ROOT = '/data/ttt-apks/extracted-features/faup-hosts'
 IPGREP_ROOT = '/data/ttt-apks/extracted-features/unzip-ipgrep'
+RIPGREP_FAUP_ROOT = '/data/ttt-apks/extracted-features/ripgrep-faup'
 
 code_signatures_regex = None
 network_signatures_regex = None
@@ -94,7 +95,7 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
 
     dex_path = os.path.join(APKANALYZER_ROOT, apk_path + '.dex-dump.gz')
     if not os.path.exists(dex_path):
-        print('DO DEX_DUMP')
+        print('NO DEX_DUMP')
         return
     dependencies = set()
     try:
@@ -120,6 +121,25 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
     apk_vector['usesPermissions'] = sorted(permissions_requested)
 
     domain_names = set()
+
+    ripgrep_faup_path = os.path.join(RIPGREP_FAUP_ROOT, apk_path + '.ripgrep-faup.csv.gz')
+    if os.path.exists(ripgrep_faup_path):
+        try:
+            # ripgrep sometimes outputs NULL bytes and other things that shouldn't be there
+            with gzip.open(ripgrep_faup_path, 'rt', errors='replace') as gz:
+                csv.register_dialect('ripgrep_faup', strict=False, quoting=csv.QUOTE_NONE)
+                csvfile = csv.reader([line[:8192].replace('\0', '') for line in gz.readlines()],
+                                     dialect='ripgrep_faup')
+                # faup sometimes outputs corrupt rows so just include all columns in the set
+                for row in csvfile:
+                    domain_names.update([x.strip() for x in row])
+        except EOFError as e:
+            print('rm', ripgrep_faup_path, e)
+            os.remove(ripgrep_faup_path)
+        except csv.Error as e:
+            print(ripgrep_faup_path, row, e)
+            sys.exit(1)
+
     ipgrep_path = os.path.join(IPGREP_ROOT, apk_path + '.unzip-ipgrep')
     if os.path.exists(ipgrep_path):
         with open(ipgrep_path, errors='replace') as fp:
@@ -135,13 +155,16 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
     faup_path = os.path.join(FAUP_ROOT, apk_path + '.unzip-faup.csv')
     if os.path.exists(faup_path):
         with open(faup_path, errors='replace') as fp:
-            domain_names.update([x.strip() for x in fp.readlines()])
-        if '' in domain_names:
-            domain_names.remove('')
+            csvfile = csv.reader(fp, strict=False)
+            for row in csvfile:
+                # faup sometimes outputs corrupt rows so just include all columns in the set
+                domain_names.update([x.strip() for x in row])
 
-    if not os.path.exists(ipgrep_path) and not os.path.exists(faup_path):
+    if not os.path.exists(ipgrep_path) and not os.path.exists(faup_path) and not os.path.exists(ripgrep_faup_path):
         print('NO IPGREP or FAUP domainNames')
         return
+    if '' in domain_names:
+        domain_names.remove('')
 
     tracker_domain_names = set()
     for name in domain_names:
