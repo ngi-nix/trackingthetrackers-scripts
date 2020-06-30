@@ -25,6 +25,7 @@ for section in ['repo', 'archive']:
     url = 'https://ftp.fau.de/fdroid/' + section
     indexdata = None
     if os.path.exists('index-v1.json'):
+        print('USING LOCAL INDEX!')
         with open('index-v1.json') as fp:
             indexdata = json.load(fp)
     else:
