@@ -111,34 +111,38 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
     if not os.path.exists(axml_path):
         print('NO AXML')
         return
-    tree = ElementTree.parse(axml_path)
-    permissions = tree.findall('uses-permission')  # type: List[ElementTree.Element]
-    # loop over xml tree and gather permissions in a list
-    permissions_requested = []
-    for perm in permissions:  # type: ElementTree.Element
-        for p in perm.items():  # type: Tuple[str, str]
-            permissions_requested.append(p[1])  # actual permission
-    apk_vector['usesPermissions'] = sorted(permissions_requested)
+    try:
+        tree = ElementTree.parse(axml_path)
+        permissions = tree.findall('uses-permission')  # type: List[ElementTree.Element]
+        # loop over xml tree and gather permissions in a list
+        permissions_requested = []
+        for perm in permissions:  # type: ElementTree.Element
+            for p in perm.items():  # type: Tuple[str, str]
+                permissions_requested.append(p[1])  # actual permission
+        apk_vector['usesPermissions'] = sorted(permissions_requested)
+    except xml.etree.ElementTree.ParseError as e:
+        print(axml_path, e)
+        os.remove(dex_path)
 
     domain_names = set()
+
+    csv.register_dialect('skiperrors', strict=False, quoting=csv.QUOTE_NONE)
 
     ripgrep_faup_path = os.path.join(RIPGREP_FAUP_ROOT, apk_path + '.ripgrep-faup.csv.gz')
     if os.path.exists(ripgrep_faup_path):
         try:
             # ripgrep sometimes outputs NULL bytes and other things that shouldn't be there
             with gzip.open(ripgrep_faup_path, 'rt', errors='replace') as gz:
-                csv.register_dialect('ripgrep_faup', strict=False, quoting=csv.QUOTE_NONE)
                 csvfile = csv.reader([line[:8192].replace('\0', '') for line in gz.readlines()],
-                                     dialect='ripgrep_faup')
+                                     dialect='skiperrors')
                 # faup sometimes outputs corrupt rows so just include all columns in the set
                 for row in csvfile:
                     domain_names.update([x.strip() for x in row])
-        except EOFError as e:
+        except (EOFError, OSError) as e:
             print('rm', ripgrep_faup_path, e)
             os.remove(ripgrep_faup_path)
         except csv.Error as e:
             print(ripgrep_faup_path, row, e)
-            sys.exit(1)
 
     ipgrep_path = os.path.join(IPGREP_ROOT, apk_path + '.unzip-ipgrep')
     if os.path.exists(ipgrep_path):
@@ -154,11 +158,14 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
 
     faup_path = os.path.join(FAUP_ROOT, apk_path + '.unzip-faup.csv')
     if os.path.exists(faup_path):
-        with open(faup_path, errors='replace') as fp:
-            csvfile = csv.reader(fp, strict=False)
-            for row in csvfile:
-                # faup sometimes outputs corrupt rows so just include all columns in the set
-                domain_names.update([x.strip() for x in row])
+        try:
+            with open(faup_path, errors='replace') as fp:
+                csvfile = csv.reader(fp, dialect='skiperrors')
+                for row in csvfile:
+                    # faup sometimes outputs corrupt rows so just include all columns in the set
+                    domain_names.update([x.strip() for x in row])
+        except csv.Error as e:
+            print(faup_path, row, e)
 
     if not os.path.exists(ipgrep_path) and not os.path.exists(faup_path) and not os.path.exists(ripgrep_faup_path):
         print('NO IPGREP or FAUP domainNames')
