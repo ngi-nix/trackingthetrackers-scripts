@@ -175,7 +175,7 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
     apk_vector['domainNames'] = sorted(tracker_domain_names)
 
     output = {
-        'meta': '0.1.0',
+        'meta': {"ver": "0.2.0"},
         'apks': [apk_vector],
     }
     feature_vector_json = apk_symlink_path[:-4] + '.json'
