@@ -10,6 +10,7 @@ import json
 import os
 import re
 import requests
+import time
 import zipfile
 from xml.etree import ElementTree
 from androguard.core.bytecodes.apk import get_apkid
@@ -24,6 +25,7 @@ RIPGREP_FAUP_ROOT = '/data/ttt-apks/extracted-features/ripgrep-faup'
 
 code_signatures_regex = None
 network_signatures_regex = None
+
 
 
 def write_apk_list(apk_list, apk_list_file):
@@ -87,6 +89,8 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
     if not code_signatures_regex or not network_signatures_regex:
         code_signatures_regex, network_signatures_regex = get_exodus_signatures()
 
+    starttime = time.time()
+
     apk_path = os.readlink(apk_symlink_path)[len(APK_ROOT) + 1:]
     apk_vector = {
         'applicationId': applicationId,
@@ -106,6 +110,7 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
         print(dex_path, e)
         os.remove(dex_path)
     apk_vector['dependencies'] = sorted(dependencies)
+    dexdumptime = time.time()
 
     axml_path = os.path.join(AXML_ROOT, apk_path + '.AndroidManifest.xml')
     if not os.path.exists(axml_path):
@@ -123,9 +128,9 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
     except xml.etree.ElementTree.ParseError as e:
         print(axml_path, e)
         os.remove(dex_path)
+    axmltime = time.time()
 
     domain_names = set()
-
     csv.register_dialect('skiperrors', strict=False, quoting=csv.QUOTE_NONE)
 
     ripgrep_faup_path = os.path.join(RIPGREP_FAUP_ROOT, apk_path + '.ripgrep-faup.csv.gz')
@@ -143,6 +148,7 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
             os.remove(ripgrep_faup_path)
         except csv.Error as e:
             print(ripgrep_faup_path, row, e)
+    ripgreptime = time.time()
 
     ipgrep_path = os.path.join(IPGREP_ROOT, apk_path + '.unzip-ipgrep')
     if os.path.exists(ipgrep_path):
@@ -155,6 +161,7 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
                 domainname = row[1]
                 if domainname and domainname != '-':
                     domain_names.add(domainname)
+    ipgreptime = time.time()
 
     faup_path = os.path.join(FAUP_ROOT, apk_path + '.unzip-faup.csv')
     if os.path.exists(faup_path):
@@ -172,6 +179,7 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
         return
     if '' in domain_names:
         domain_names.remove('')
+    fauptime = time.time()
 
     tracker_domain_names = set()
     for name in domain_names:
@@ -189,3 +197,12 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
     print('WRITE FEATURE VECTOR:', feature_vector_json)
     with open(feature_vector_json, 'w') as fp:
         json.dump(output, fp, indent=2, sort_keys=True)
+    endtime = time.time()
+    print('\tdexdump: %02.4f' % (dexdumptime - starttime),
+          'axml: %02.4f' % (axmltime - dexdumptime),
+          'ripgrep: %02.4f' % (ripgreptime - axmltime),
+          'ipgrep: %02.4f' % (ipgreptime - ripgreptime),
+          'faup: %02.4f' % (fauptime - ipgreptime),
+          'write: %02.4f' % (endtime - fauptime),
+          'TOTAL: %02.4f\n' % (endtime - starttime),
+          sep='\t')
