@@ -125,7 +125,28 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
             for p in perm.items():  # type: Tuple[str, str]
                 permissions_requested.append(p[1])  # actual permission
         apk_vector['usesPermissions'] = sorted(permissions_requested)
-    except xml.etree.ElementTree.ParseError as e:
+
+        action_names = set()
+        application = tree.find('application')
+        if application and len(application) > 0:
+            receivers = application.findall('receiver')
+            for receiver in receivers:
+                for intent_filter in receiver.findall('intent-filter'):
+                    for action in intent_filter.findall('action'):
+                        action_name = action.attrib['{http://schemas.android.com/apk/res/android}name']
+                        action_names.add(action_name)
+        apk_vector['broadcastReceiverIntentFilterActionNames'] = sorted(action_names)
+
+        meta_data_names = set()
+        for item in ([tree, application] + receivers
+                     + application.findall('activity')
+                     + application.findall('activity-alias')
+                     + application.findall('provider')
+                     + application.findall('service')):
+            for meta_data in item.findall('meta-data'):
+                meta_data_names.add(meta_data.attrib['{http://schemas.android.com/apk/res/android}name'])
+        apk_vector['metaDataNames'] = sorted(meta_data_names)
+    except ElementTree.ParseError as e:
         print(axml_path, e)
         os.remove(dex_path)
     axmltime = time.time()
