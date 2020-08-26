@@ -28,6 +28,13 @@ network_signatures_regex = None
 
 
 
+class Encoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, set):
+            return sorted(obj)
+        return super().default(obj)
+
+
 def write_apk_list(apk_list, apk_list_file):
     print('writing', apk_list_file)
     with gzip.GzipFile(apk_list_file, 'w') as gz:
@@ -84,7 +91,41 @@ def get_exodus_signatures():
     return (code_signatures_regex, network_signatures_regex)
 
 
-def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
+def init_feature_vector_instance():
+    return {
+        "meta": {
+            "ver": "0.2.0"
+        },
+        "apks": [{
+            "metaDataNames": [],
+            "broadcastReceiverIntentFilterActionNames": [],
+            "dependencies": [],
+            "domainNames": [],
+            "usesPermissions": [],
+        }]
+    }
+
+
+def init_search_space():
+    """search_space uses sets during operation, then is output as lists"""
+    d = init_feature_vector_instance()
+    for k in d['apks'][0].keys():
+        d['apks'][0][k] = set()
+    return d
+
+
+def add_to_search_space(search_space, apk_vector):
+    for k in search_space['apks'][0].keys():
+        search_space['apks'][0][k].update(apk_vector.get(k, []))
+
+
+def write_search_space(output, set_dir):
+    output['apks'][0]['label'] = os.path.basename(set_dir)
+    with open(os.path.join(set_dir, 'search_space.json'), 'w') as fp:
+        json.dump(output, fp, indent=2, sort_keys=True, cls=Encoder)
+
+
+def write_feature_vector_json(search_space, apk_symlink_path, applicationId, sha256):
     global code_signatures_regex, network_signatures_regex
     if not code_signatures_regex or not network_signatures_regex:
         code_signatures_regex, network_signatures_regex = get_exodus_signatures()
@@ -210,11 +251,10 @@ def write_feature_vector_json(apk_symlink_path, applicationId, sha256):
         tracker_domain_names.remove('')
     apk_vector['domainNames'] = sorted(tracker_domain_names)
 
-    output = {
-        'meta': {"ver": "0.2.0"},
-        'apks': [apk_vector],
-    }
     feature_vector_json = apk_symlink_path[:-4] + '.json'
+    add_to_search_space(search_space, apk_vector)
+    output = init_feature_vector_instance()
+    output['apks'] = [apk_vector]
     print('WRITE FEATURE VECTOR:', feature_vector_json)
     with open(feature_vector_json, 'w') as fp:
         json.dump(output, fp, indent=2, sort_keys=True)

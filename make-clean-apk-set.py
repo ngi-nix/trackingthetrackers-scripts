@@ -6,6 +6,7 @@ import os
 import trackingthetrackers
 from fdroidserver import common, index
 
+
 config = dict()
 config['jarsigner'] = 'jarsigner'
 common.config = config
@@ -15,6 +16,7 @@ code_signatures_regex, network_signatures_regex = trackingthetrackers.get_exodus
 
 fdroid_apk_dir = '/data/malware-apks/known-good/f-droid.org'
 set_dir = os.path.join(os.getcwd(), 'clean')
+search_space = trackingthetrackers.init_search_space()
 
 for f in glob.glob(os.path.join(set_dir, '*/*/*.apk')):
     os.unlink(f)
@@ -62,9 +64,11 @@ for section in ['repo', 'archive']:
                 None,  # dex size
                 'f-droid.org',
             ))
-            trackingthetrackers.write_feature_vector_json(symlink_path,
+            trackingthetrackers.write_feature_vector_json(search_space,
+                                                          symlink_path,
                                                           package['packageName'],
                                                           package['hash'])
 
 trackingthetrackers.write_apk_list(apk_list, 'clean/apk_list.csv.gz')
+trackingthetrackers.write_search_space(search_space, set_dir)
 # TODO get clean set from Exodus

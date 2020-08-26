@@ -17,6 +17,7 @@ code_signatures_regex, network_signatures_regex = trackingthetrackers.get_exodus
 ikarus_adware_apk_dir = '/data/malware-apks/ikarus/adware'
 fdroid_apk_dir = '/data/malware-apks/known-good/f-droid.org'
 set_dir = os.path.join(os.getcwd(), 'trackers')
+search_space = trackingthetrackers.init_search_space()
 
 for f in glob.glob(os.path.join(set_dir, '*/*/*.apk')):
     os.unlink(f)
@@ -64,7 +65,8 @@ for section in ['repo', 'archive']:
                 None,  # dex size
                 'f-droid.org',
             ))
-            trackingthetrackers.write_feature_vector_json(symlink_path,
+            trackingthetrackers.write_feature_vector_json(search_space,
+                                                          symlink_path,
                                                           package['packageName'],
                                                           package['hash'])
 
@@ -79,8 +81,9 @@ for f in sorted(glob.glob(os.path.join(ikarus_adware_apk_dir, '*'))):
             os.makedirs(os.path.dirname(symlink_path), exist_ok=True)
             print(f, '\n\t', symlink_path)
             os.symlink(f, symlink_path)
-            trackingthetrackers.write_feature_vector_json(symlink_path, row[5], row[0])
+            trackingthetrackers.write_feature_vector_json(search_space, symlink_path, row[5], row[0])
 
 trackingthetrackers.write_apk_list(apk_list, 'trackers/apk_list.csv.gz')
+trackingthetrackers.write_search_space(search_space, set_dir)
 
 # TODO get tracker set from Exodus
