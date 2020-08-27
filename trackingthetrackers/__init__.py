@@ -1,6 +1,7 @@
 
 import binascii
 import csv
+import datetime
 import functools
 import glob
 import gzip
@@ -10,6 +11,7 @@ import json
 import os
 import re
 import requests
+import sys
 import time
 import zipfile
 from xml.etree import ElementTree
@@ -92,18 +94,34 @@ def get_exodus_signatures():
 
 
 def init_feature_vector_instance():
-    return {
-        "meta": {
-            "ver": "0.2.0"
-        },
+    """https://gitlab.com/trackingthetrackers/wiki/-/wikis/JSON-format-definition-for-feature-vectors"""
+    output = {
         "apks": [{
             "metaDataNames": [],
             "broadcastReceiverIntentFilterActionNames": [],
             "dependencies": [],
             "domainNames": [],
             "usesPermissions": [],
-        }]
+        }],
+        "meta": {
+            "ver": "0.3.0",
+            "generated": datetime.datetime.now().isoformat(),
+            "generatedBy": sys.argv,
+        }
     }
+    try:
+        import git
+    except ImportError:
+        return output
+    if os.path.isdir('.git'):
+        repo = git.repo.Repo('.')
+        output['meta']['sourceDataCommitId'] = binascii.hexlify(bytearray(repo.head.commit.binsha)).decode()
+
+    script_git_path = os.path.dirname(sys.argv[0])
+    if os.path.isdir(os.path.join(script_git_path, '.git')):
+        repo = git.repo.Repo(script_git_path)
+        output['meta']['generatedByCommitId'] = binascii.hexlify(bytearray(repo.head.commit.binsha)).decode()
+    return output
 
 
 def init_search_space():
