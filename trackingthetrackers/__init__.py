@@ -213,9 +213,16 @@ def write_feature_vector_json(search_space, apk_symlink_path, applicationId, sha
 
         action_names = set()
         application = tree.find('application')
-        receivers = []
+        meta_data_parents = [tree, application]
         if application and len(application) > 0:
             receivers = application.findall('receiver')
+            meta_data_parents += (
+                receivers
+                + application.findall('activity')
+                + application.findall('activity-alias')
+                + application.findall('provider')
+                + application.findall('service')
+            )
             for receiver in receivers:
                 for intent_filter in receiver.findall('intent-filter'):
                     for action in intent_filter.findall('action'):
@@ -224,17 +231,15 @@ def write_feature_vector_json(search_space, apk_symlink_path, applicationId, sha
         apk_vector['broadcastReceiverIntentFilterActionNames'] = sorted(action_names)
 
         meta_data_names = set()
-        for item in ([tree, application] + receivers
-                     + application.findall('activity')
-                     + application.findall('activity-alias')
-                     + application.findall('provider')
-                     + application.findall('service')):
+        for item in meta_data_parents:
+            if item is None:
+                continue
             for meta_data in item.findall('meta-data'):
                 meta_data_names.add(meta_data.attrib['{http://schemas.android.com/apk/res/android}name'])
         apk_vector['metaDataNames'] = sorted(meta_data_names)
     except ElementTree.ParseError as e:
         print(axml_path, e)
-        os.remove(dex_path)
+        os.remove(axml_path)
     axmltime = time.time()
 
     domain_names = set()
