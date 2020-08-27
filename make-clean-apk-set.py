@@ -38,37 +38,45 @@ for section in ['repo', 'archive']:
                 packageNames_with_trackers.add(app['packageName'])
     for appid, packages in indexdata['packages'].items():
         for package in packages:
-            if package['packageName'] in packageNames_with_trackers:
-                continue
-            apk_path = os.path.join(fdroid_apk_dir, section, package['apkName'])
-            symlink_path = os.path.join(set_dir,
-                                        package['packageName'], str(package['versionCode']),
-                                        package['hash'] + '.apk')
-            if os.path.exists(symlink_path):
-                print('SKIPPING DUPLICATE:', symlink_path)
-                continue
-            os.makedirs(os.path.dirname(symlink_path), exist_ok=True)
-            print(apk_path, '\n\t', symlink_path)
-            os.symlink(apk_path, symlink_path)
+            try:
+                if package['packageName'] in packageNames_with_trackers:
+                    continue
+                apk_path = os.path.join(fdroid_apk_dir, section, package['apkName'])
+                symlink_path = os.path.join(set_dir,
+                                            package['packageName'], str(package['versionCode']),
+                                            package['hash'] + '.apk')
+                if os.path.exists(symlink_path):
+                    print('SKIPPING DUPLICATE:', symlink_path)
+                    continue
+                os.makedirs(os.path.dirname(symlink_path), exist_ok=True)
+                print(apk_path, '\n\t', symlink_path)
+                os.symlink(apk_path, symlink_path)
 
-            apk_list.add((
-                package['hash'],  # sha256
-                None,  # sha1
-                None,  # md5
-                None,  # dex_date
-                os.path.getsize(apk_path),
-                package['packageName'],
-                package['versionCode'],
-                None,  # VirusTotal detection
-                None,  # VirusTotal scan date
-                None,  # dex size
-                'f-droid.org',
-            ))
-            trackingthetrackers.write_feature_vector_json(search_space,
-                                                          symlink_path,
-                                                          package['packageName'],
-                                                          package['hash'])
+                apk_list.add((
+                    package['hash'],  # sha256
+                    None,  # sha1
+                    None,  # md5
+                    None,  # dex_date
+                    os.path.getsize(apk_path),
+                    package['packageName'],
+                    package['versionCode'],
+                    None,  # VirusTotal detection
+                    None,  # VirusTotal scan date
+                    None,  # dex size
+                    'f-droid.org',
+                ))
+                trackingthetrackers.write_feature_vector_json(
+                    search_space,
+                    symlink_path,
+                    package['packageName'],
+                    package['hash']
+                )
+            except Exception as e:
+                trackingthetrackers.append_error(package['packageName'], package['hash'],
+                                                 apk_path, symlink_path, e)
 
 trackingthetrackers.write_apk_list(apk_list, 'clean/apk_list.csv.gz')
 trackingthetrackers.write_search_space(search_space, set_dir)
+trackingthetrackers.write_errors(set_dir)
+
 # TODO get clean set from Exodus

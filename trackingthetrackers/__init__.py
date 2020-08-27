@@ -28,6 +28,7 @@ RIPGREP_FAUP_ROOT = '/data/ttt-apks/extracted-features/ripgrep-faup'
 code_signatures_regex = None
 network_signatures_regex = None
 
+errors = []
 
 
 class Encoder(json.JSONEncoder):
@@ -91,6 +92,17 @@ def get_exodus_signatures():
     code_signatures_regex = re.compile('(%s)' % '|'.join(sorted(code_signatures)))
     network_signatures_regex = re.compile('(%s)' % '|'.join(sorted(network_signatures)))
     return (code_signatures_regex, network_signatures_regex)
+
+
+def append_error(packageName, packageHash, apk_path, symlink_path, e):
+    errors.append([packageName, packageHash, apk_path, symlink_path, str(e)])
+
+
+def write_errors(set_dir):
+    output = init_feature_vector_instance()
+    output['errors'] = errors
+    with open(os.path.join(set_dir, 'errors.json'), 'w') as fp:
+        json.dump(output, fp, indent=2, sort_keys=True, cls=Encoder)
 
 
 def init_feature_vector_instance():
@@ -175,7 +187,6 @@ def write_feature_vector_json(search_space, apk_symlink_path, applicationId, sha
     elif os.path.exists(feature_vector_json):
         with open(feature_vector_json) as fp:
             data = json.load(fp)
-            print(data.get('apks', {}))
             if 'dependencies' in data.get('apks', [{}, ])[0]:
                 apk_vector['dependencies'] = data['apks'][0]['dependencies']
             else:
