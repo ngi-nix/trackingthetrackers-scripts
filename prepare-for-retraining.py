@@ -4,11 +4,11 @@
 
 import binascii
 import datetime
-import git
 import glob
 import json
 import os
 import sys
+import trackingthetrackers
 from colorama import Fore, Style
 
 files = sorted(glob.glob('*/*/*/*.json'))
@@ -34,24 +34,8 @@ for f in files:
                 for item in v:
                     features[k].add(item)
 
-output = {
-    'features': features,
-    'meta': {
-        'ver': '0.2.0',
-        'generated': datetime.datetime.now().isoformat(),
-        'generatedBy': __file__,
-    },
-}
-if os.path.isdir('.git'):
-    repo = git.repo.Repo('.')
-    output['meta']['sourceDataCommitId'] = binascii.hexlify(bytearray(repo.head.commit.binsha)).decode()
-
-script_git_path = os.path.dirname(__file__)
-if os.path.isdir(os.path.join(script_git_path, '.git')):
-    repo = git.repo.Repo(script_git_path)
-    output['meta']['generatedByCommitId'] = binascii.hexlify(bytearray(repo.head.commit.binsha)).decode()
-
+output = trackingthetrackers.init_search_space()
 for k, v in features.items():
-    output['features'][k] = sorted(v)
-with open('feature_vectors.json', 'w') as fp:
+    output['apks'][0][k] = sorted(v)
+with open('search_space.json', 'w') as fp:
     json.dump(output, fp, indent=2, sort_keys=True)
