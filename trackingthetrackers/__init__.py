@@ -184,6 +184,7 @@ def write_feature_vector_json(search_space, apk_symlink_path, applicationId, sha
 
         action_names = set()
         application = tree.find('application')
+        receivers = []
         if application and len(application) > 0:
             receivers = application.findall('receiver')
             for receiver in receivers:
