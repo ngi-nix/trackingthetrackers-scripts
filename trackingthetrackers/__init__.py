@@ -137,20 +137,35 @@ def write_feature_vector_json(search_space, apk_symlink_path, applicationId, sha
         'applicationId': applicationId,
         'sha256': sha256,
     }
+    feature_vector_json = apk_symlink_path[:-4] + '.json'
 
     dex_path = os.path.join(APKANALYZER_ROOT, apk_path + '.dex-dump.gz')
     if not os.path.exists(dex_path):
         print('NO DEX_DUMP')
         return
     dependencies = set()
-    try:
-        with gzip.open(dex_path, 'rt', errors='replace') as gz:
-            for m in code_signatures_regex.findall(gz.read()):
-                dependencies.add(m)
-    except EOFError as e:
-        print(dex_path, e)
-        os.remove(dex_path)
-    apk_vector['dependencies'] = sorted(dependencies)
+    if False:  # enable as needed, this is slow
+        try:
+            with gzip.open(dex_path, 'rt', errors='replace') as gz:
+                for m in code_signatures_regex.findall(gz.read()):
+                    dependencies.add(m)
+        except EOFError as e:
+            print(dex_path, e)
+            os.remove(dex_path)
+    if dependencies:
+        apk_vector['dependencies'] = sorted(dependencies)
+    elif os.path.exists(feature_vector_json):
+        with open(feature_vector_json) as fp:
+            data = json.load(fp)
+            print(data.get('apks', {}))
+            if 'dependencies' in data.get('apks', [{}, ])[0]:
+                apk_vector['dependencies'] = data['apks'][0]['dependencies']
+            else:
+                print('NO CACHED DEX DUMP')
+                return
+    else:
+        print('NO CACHED DEX DUMP OR FEATURE VECTOR JSON')
+        return
     dexdumptime = time.time()
 
     axml_path = os.path.join(AXML_ROOT, apk_path + '.AndroidManifest.xml')
@@ -251,7 +266,6 @@ def write_feature_vector_json(search_space, apk_symlink_path, applicationId, sha
         tracker_domain_names.remove('')
     apk_vector['domainNames'] = sorted(tracker_domain_names)
 
-    feature_vector_json = apk_symlink_path[:-4] + '.json'
     add_to_search_space(search_space, apk_vector)
     output = init_feature_vector_instance()
     output['apks'] = [apk_vector]
