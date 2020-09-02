@@ -1,8 +1,10 @@
-#! /usr/env/bin python3
+#! /usr/bin/env python3
 
 # SPDX-FileCopyrightText: 2020 Michael Pöhn <michael.poehn@fsfe.org>
-#
 # SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# standalone project:
+# https://gitlab.com/uniqx/domain-asn-lookup
 
 import io
 import bz2
@@ -23,25 +25,34 @@ import appdirs
 import requests
 
 
-def lookup_newest_asn_db_version(sess=requests.Session()):
-    url = "http://archive.routeviews.org/route-views4/bgpdata/"
-    resp = sess.get(url)
-    matches = re.findall(r"href=\"(\d{4}\.\d{2})/\"", resp.text)
-    if not matches:
-        print("could not lookup newest ASN db version")
-        sys.exit(1)
-    matches.sort(reverse=True)
-    url += matches[0] + "/RIBS/"
-
+def lookup_newest_asn_db_version_rib(sess, url):
     resp = sess.get(url)
     matches = re.findall(r"href=\"(rib\.\d{8}\.\d{4}\.bz2)\"", resp.text)
     if not matches:
-        print("could not lookup newest ASN db version")
-        sys.exit(1)
+        raise Exception(f"could not find rib: {url}")
     matches.sort(reverse=True)
     url += matches[0]
 
     return url
+
+
+def lookup_newest_asn_db_version(sess=requests.Session()):
+    url = "http://archive.routeviews.org/route-views4/bgpdata/"
+    resp = sess.get(url)
+    matches = re.findall(r"href=\"([0-9]{4}\.[0-9]{2})\/\"", resp.text)
+    if not matches:
+        print("could not lookup newest ASN db version")
+        sys.exit(1)
+    matches.sort(reverse=True)
+
+    for m in matches:
+        u = url + m + "/RIBS/"
+        try:
+            return lookup_newest_asn_db_version_rib(sess, u)
+        except:
+            pass
+    print("could not lookup newest ASN db version")
+    sys.exit(1)
 
 
 def update_asn_database(dbpath):
@@ -74,7 +85,9 @@ def update_asn_database(dbpath):
 
 
 def init_asn_cache():
-    cachedir = os.path.join(appdirs.user_cache_dir(), "domain_feature_tool")
+    cachedir = os.path.join(
+        appdirs.user_cache_dir(), os.path.basename(__file__).replace(".py", "")
+    )
     if not os.path.exists(cachedir):
         os.makedirs(cachedir)
     dbpath = os.path.join(cachedir, "rib.bz2")
@@ -96,12 +109,16 @@ def process(fp, dbpath):
                 pass
 
 
-if __name__ == "__main__":
+def main():
 
     parser = argparse.ArgumentParser(
-        description="Tool for creating additional ML-feature-sets for domain name-datasets. Expects domain names in stdin or attempts to read them form a file if -f is specified"
+        description="Tool for creating additional ML-feature-sets for domain name-datasets."
+    )
+    parser.add_argument(
+        "--debug", action="store_true", default=False, help=argparse.SUPPRESS
     )
     parser.add_argument("-f", "--file", default=None)
+
     config = parser.parse_args()
 
     dbpath = init_asn_cache()
@@ -112,3 +129,7 @@ if __name__ == "__main__":
             process(f, dbpath)
     else:
         process(fileinput.input(), dbpath)
+
+
+if __name__ == "__main__":
+    main()
