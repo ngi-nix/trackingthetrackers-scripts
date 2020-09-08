@@ -113,6 +113,7 @@ def init_feature_vector_instance():
             "broadcastReceiverIntentFilterActionNames": [],
             "dependencies": [],
             "domainNames": [],
+            "domainNamesFilteredByExodus":[],
             "usesPermissions": [],
         }],
         "meta": {
@@ -299,7 +300,7 @@ def write_feature_vector_json(search_space, apk_symlink_path, applicationId, sha
             tracker_domain_names.add(match)
     if '' in tracker_domain_names:
         tracker_domain_names.remove('')
-    apk_vector['domainNames'] = sorted(tracker_domain_names)
+    apk_vector['domainNamesFilteredByExodus'] = sorted(tracker_domain_names)
 
     add_to_search_space(search_space, apk_vector)
     output = init_feature_vector_instance()
