@@ -1,0 +1,4 @@
+galaxy.store/
+/tests/
+__pycache__
+/reviewed.json
