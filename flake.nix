@@ -5,26 +5,18 @@
     nixpkgs.url = "github:NixOS/nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
     mach-nix-src.url = "github:DavHau/mach-nix";
+    #axml2xml-src = {
+    #  url = "github:ngi/apkparser";
+    #};
   };
 
   outputs = { self, nixpkgs, flake-utils, mach-nix-src }:
     flake-utils.lib.eachDefaultSystem (
       system:
         let
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = import nixpkgs { inherit system; };
+
           mach-nix = import mach-nix-src { inherit pkgs; python = "python38"; };
-          # segfaults currently
-          axml2xml = pkgs.buildGoModule {
-            pname = "axml2xml";
-            src = pkgs.fetchFromGithub {
-              owner = "avast";
-              repo = "apkparser";
-              rev = "6256c76f738e4dc04f5d2cc3e1cc0fbe83d89141";
-              sha256 = "0b9gqnfmhkgr95bqw792vi08grv31wibl9zn6v8nviyk6j45a9iw";
-            };
-            vendorSha256 = null;
-            runVend = true;
-          };
 
           pyEnv = mach-nix.mkPython rec {
             requirements = ''
